@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Working with Claude Code — A Practical Guide</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --bg-elevated: #1a1d27;
+            --bg-code: #151820;
+            --border: #2a2d3a;
+            --text: #e2e4ea;
+            --text-muted: #8b8fa3;
+            --accent: #c4956a;
+            --accent-dim: rgba(196, 149, 106, 0.15);
+            --green: #6bc77a;
+            --red: #e06c75;
+            --blue: #61afef;
+            --purple: #c678dd;
+            --yellow: #e5c07b;
+            --tip-bg: rgba(97, 175, 239, 0.08);
+            --tip-border: rgba(97, 175, 239, 0.25);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            scroll-behavior: smooth;
+            scrollbar-color: var(--border) var(--bg);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 17px;
+        }
+
+        /* Nav */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            background: rgba(15, 17, 23, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+        }
+
+        nav .nav-inner {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 56px;
+        }
+
+        nav .logo {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+        }
+
+        nav .nav-links { display: flex; gap: 0.25rem; }
+
+        nav .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.82rem;
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        nav .nav-links a:hover,
+        nav .nav-links a.active {
+            color: var(--text);
+            background: var(--accent-dim);
+        }
+
+        /* Hero */
+        .hero {
+            padding: 10rem 2rem 6rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero .label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 em {
+            font-style: normal;
+            color: var(--accent);
+        }
+
+        .hero .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            line-height: 1.7;
+            max-width: 640px;
+        }
+
+        /* Section */
+        section {
+            padding: 5rem 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        section .section-number {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        section h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+        }
+
+        section p {
+            color: var(--text-muted);
+            margin-bottom: 1.25rem;
+        }
+
+        section p strong {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        /* Divider */
+        .divider {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .divider hr {
+            border: none;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Callout */
+        .callout {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .callout p {
+            color: var(--text);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        .callout .callout-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Tip callout */
+        .tip {
+            background: var(--tip-bg);
+            border: 1px solid var(--tip-border);
+            border-left: 3px solid var(--blue);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin: 1.5rem 0;
+        }
+
+        .tip .tip-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--blue);
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .tip p {
+            color: var(--text);
+            margin: 0;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .tip code {
+            background: rgba(97, 175, 239, 0.12);
+            color: var(--blue);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+        }
+
+        /* Code block */
+        .code-block {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+        }
+
+        .code-block .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.65rem 1rem;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-block .code-header span {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .code-block .code-tag {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .code-block pre {
+            padding: 1.25rem;
+            overflow-x: auto;
+            font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.65;
+            color: var(--text-muted);
+        }
+
+        .code-block pre .comment { color: #5c6370; }
+        .code-block pre .highlight { color: var(--text); }
+        .code-block pre .accent { color: var(--accent); }
+        .code-block pre .green { color: var(--green); }
+        .code-block pre .blue { color: var(--blue); }
+        .code-block pre .purple { color: var(--purple); }
+        .code-block pre .yellow { color: var(--yellow); }
+        .code-block pre .red { color: var(--red); }
+
+        /* Numbered list */
+        .step-list { counter-reset: step; margin: 1.5rem 0; }
+
+        .step-item {
+            counter-increment: step;
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+            align-items: flex-start;
+        }
+
+        .step-item::before {
+            content: counter(step);
+            flex-shrink: 0;
+            width: 32px; height: 32px;
+            background: var(--accent-dim);
+            color: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-top: 0.15rem;
+        }
+
+        .step-item .step-content { flex: 1; }
+        .step-item .step-content strong { color: var(--text); display: block; margin-bottom: 0.2rem; }
+        .step-item .step-content p { font-size: 0.92rem; margin: 0; }
+
+        /* Flow diagram */
+        .flow {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+
+        .flow-step {
+            font-size: 0.82rem;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            background: var(--accent-dim);
+            color: var(--accent);
+            white-space: nowrap;
+        }
+
+        .flow-arrow { color: var(--text-muted); font-size: 0.85rem; }
+
+        /* Footer */
+        footer {
+            padding: 4rem 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            border-top: 1px solid var(--border);
+            max-width: 800px;
+            margin: 4rem auto 0;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        @media (max-width: 768px) {
+            nav .nav-links { display: none; }
+            .hero { padding: 8rem 1.5rem 4rem; }
+            section { padding: 3.5rem 1.5rem; }
+            section h2 { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-inner">
+        <div class="logo">Claude Code Guide</div>
+        <div class="nav-links">
+            <a href="#foundation">Foundation</a>
+            <a href="#research">Research</a>
+            <a href="#brief">The Brief</a>
+            <a href="#planning">Planning</a>
+            <a href="#build">Build</a>
+            <a href="#review">Review</a>
+            <a href="#automate">Automate</a>
+            <a href="#tips">Tips</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+    <div class="label">How we work</div>
+    <h1>Research it. Brief it.<br><em>Let Claude build it.</em></h1>
+    <p class="subtitle">The secret to one-shotting features with Claude Code isn't clever prompting — it's the work you do before you let it run. Research the problem with Claude, write a light brief with links to what you found, and walk away. The brief is the last time you touch it until you're reviewing the output.</p>
+</div>
+
+<div class="divider"><hr></div>
+
+<!-- Section 1: The Foundation -->
+<section id="foundation">
+    <div class="section-number">01 — The Foundation</div>
+    <h2>Your docs are the cheat code.</h2>
+
+    <p>Before anything else — before research, before briefs, before one-shotting — you need good project documentation. This is the stuff Claude reads every time it starts a task, and it's the single biggest lever you have over output quality.</p>
+
+    <p><strong>Think of it this way:</strong> every doc you write is an investment that pays off on every future task. Early on you'll be writing 200-line briefs full of context. Give it a month and your briefs are two sentences and a link to a spec, because the docs do the heavy lifting.</p>
+
+    <div class="step-list">
+        <div class="step-item">
+            <div class="step-content">
+                <strong>CLAUDE.md — the codebase source of truth</strong>
+                <p>Project structure, naming conventions, file organisation, import patterns, component patterns, how you like things done. Claude reads this at the start of every session. Update it once, every future task gets better — whether you're working interactively or running headless agents.</p>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-content">
+                <strong>Architecture specs</strong>
+                <p>How data flows, what the API looks like, which shared packages exist, how state is managed. Claude can poke around the codebase on its own, but a good spec saves it 10 minutes of file-reading and gets it to the right answer straight away.</p>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-content">
+                <strong>Code style &amp; test rules</strong>
+                <p>How you structure components, how you name things, what to test, what to skip. All the stuff ESLint can't catch but you'd flag in a PR review. When Claude follows these, the output needs less rework.</p>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-content">
+                <strong>Research docs</strong>
+                <p>These are the per-feature docs you build during the research phase (next section). They live in your repo and get referenced in briefs. Over time you build up a library of domain knowledge that makes every related ticket faster.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">It compounds</div>
+        <p>This is the actual cheat code. Not clever prompts, not fancy tooling — clear docs that tell Claude how things work around here. The better your docs, the less context you need in each brief, and the better the output gets. It's a flywheel.</p>
+    </div>
+
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- Section 2: Research -->
+<section id="research">
+    <div class="section-number">02 — Research</div>
+    <h2>Understand the problem before you solve it.</h2>
+
+    <p>This is where most of the human value lives. Before you write a single line of a brief, <strong>work with Claude to understand the problem space.</strong> Explore the existing platform, look at how the feature works in legacy systems, dig into the API, study how other products in the industry have solved it.</p>
+
+    <p>The research phase is interactive and collaborative. You're talking to Claude, asking it to read files, explore APIs, pull apart existing implementations. The goal is to produce <strong>research documents</strong> — structured write-ups that capture everything the agent will need to know when it's time to build.</p>
+
+    <div class="step-list">
+        <div class="step-item">
+            <div class="step-content">
+                <strong>Explore the existing platform</strong>
+                <p>Get Claude to read through your codebase's existing implementation of related features. How do similar components work? What patterns do they follow? What state management approaches are in play? Claude builds a picture of how things work around here — and documents it so the building agent doesn't have to rediscover it all.</p>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-content">
+                <strong>Understand the API and data model</strong>
+                <p>Have Claude dig into the API — queries, mutations, types, data shapes. If there's a legacy system involved, get it to document the quirks, the edge cases, the things that aren't obvious from the schema alone. This is the domain knowledge that makes or breaks a one-shot.</p>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-content">
+                <strong>Study industry implementations</strong>
+                <p>This is the stuff Claude wouldn't find during its own planning phase — research that lives outside your codebase. How do other products solve this problem? What are the established UX patterns? What are the trade-offs between different approaches? Building a flashcard feature? Look at how Anki, Quizlet, and Duolingo handle it. Building a payment flow? Study Stripe's checkout patterns. Building a rich text editor? Look at how Notion and Linear approach it. Claude can help you research all of this and document the decisions you make.</p>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-content">
+                <strong>Explore third-party docs and integrations</strong>
+                <p>If your feature touches external services, SDKs, or libraries, this is the time to research them. Get Claude to read through the docs, understand the API surface, and document the integration approach. The building agent won't have access to external docs during its run — so anything it needs to know about third-party services has to be captured in your research docs.</p>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-content">
+                <strong>Produce research docs</strong>
+                <p>The output of all this is one or more research documents that live in your repo. API shapes, data models, component patterns, design decisions, edge cases, industry trade-offs, third-party integration details. These docs become the knowledge base that future briefs reference — write them once, use them forever.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">This is where you add the most value</div>
+        <p>Research is the phase where human judgement matters most. You're deciding what to build, how it should work, what trade-offs to make. The agent can help you explore and document, but the decisions are yours. Once the research is done and the docs are written, everything after this point is mostly autopilot.</p>
+    </div>
+
+    <p>The key insight is that Claude's planning phase — which runs automatically before it starts building — can explore your codebase, but it can't explore the wider world. Industry best practices, third-party documentation, design patterns from other products, business context that lives in someone's head — all of that needs to be captured in research docs so the agent has it when it needs it.</p>
+
+    <p><strong>Think about two types of research docs.</strong> The first type is feature-specific — a deep dive into the API surface, data model, and design decisions for a particular feature. These get linked directly in the brief and feed straight into the planning phase. The agent reads them, understands the domain, and plans accordingly. The second type is repo-wide — broader documentation about how your platform works, how services connect, what patterns are established. These live permanently in your repo and serve every future task. An architecture overview, a guide to your state management approach, a map of your API layer — these are the docs that mean you never have to explain the same thing twice.</p>
+
+    <p>Get Claude to generate both types during research. Ask it to explore the codebase and produce a write-up of how a related system works. Ask it to document the API surface for a feature area. Ask it to summarise the patterns it found across similar components. These generated docs become part of your project's knowledge base — they feed into the planning phase for the current feature, and they're there for every future feature that touches the same area. The more research docs you accumulate, the less research each new feature needs.</p>
+
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- Section 3: The Brief -->
+<section id="brief">
+    <div class="section-number">03 — The Brief</div>
+    <h2>Your brain dump + links. That's it.</h2>
+
+    <p><strong>The brief is the last time you really touch this before reviewing the output.</strong> It's a brain dump — everything you know about what needs building, poured into a document along with links to everything you've gathered. Your research docs, Figma designs, reference repositories, third-party API docs, example implementations from other projects. Anything that gives Claude the full picture.</p>
+
+    <p>Keep it goal-oriented. Describe the outcome, not the steps. You're not writing implementation details or telling Claude which files to create. You're describing what the feature does, what it should look like, what constraints it has, and then pointing at everything it needs to figure out the rest. That's the whole point of investing in the research phase — so the brief can be a light pointer to heavy docs.</p>
+
+    <p>A good brief has a short description of the feature, links to every research doc you produced, links to the Figma designs (specific frames, not just the whole file), any reference implementations worth looking at (other components in your codebase, open-source repos that solve a similar problem), acceptance criteria so Claude knows what "done" looks like, and any constraints that aren't captured elsewhere.</p>
+
+    <p>What you don't need: file paths, function signatures, step-by-step implementation instructions. The research docs cover the domain knowledge. The CLAUDE.md covers the project conventions. The Figma designs cover the UI. The brief just ties it all together. If your research was thorough, the brief almost writes itself — it's mostly links and a sentence or two about what you want.</p>
+
+    <div class="callout">
+        <div class="callout-label">What to include vs what to skip</div>
+        <p>If the agent can find it in the codebase, skip it. If it's in your research docs, link to them. Only put things in the brief that aren't captured anywhere else — Figma links, acceptance criteria, reference repos, constraints specific to this feature. The lighter the brief, the better (as long as everything is linked or documented somewhere). Over time, as your project docs get richer, your briefs get shorter.</p>
+    </div>
+
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- Section 4: Planning -->
+<section id="planning">
+    <div class="section-number">04 — Planning</div>
+    <h2>Claude plans it for itself. Don't read it.</h2>
+
+    <p>Once you hand over the brief, the first thing that happens is a planning phase. This runs on autopilot and it's one of the most powerful parts of the whole workflow — and you're not involved at all.</p>
+
+    <p>We use planning skills that generate structured documents the agent uses as its own internal brief. The flow looks like this:</p>
+
+    <div class="flow">
+        <span class="flow-step">Brief</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Brainstorm</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Design Doc</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Impl Plan</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Execution</span>
+    </div>
+
+    <div class="step-list">
+        <div class="step-item">
+            <div class="step-content">
+                <strong>Brainstorm → Design document</strong>
+                <p>A brainstorming skill kicks off first. The agent digs through the codebase, reads your research docs and specs, and produces a design document — everything it learned, its decisions on approach, and a structured brief for the work. It's like a scoped ticket the agent writes for itself, auto-generated from your brief and the project context.</p>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-content">
+                <strong>Writing plan → Implementation plan</strong>
+                <p>From that design doc, a writing plan skill generates a detailed implementation plan. These things are often 1,000+ lines — every file to touch, every component to create, every edge case, the order of operations. Way more thorough than anything you'd write yourself.</p>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-content">
+                <strong>Nobody reads any of this</strong>
+                <p>This is the key bit. These documents are food for the agent, not for you. They exist so the agent has a solid brief it wrote for itself before it starts coding. If something's off in the plan, you'll spot it in the output — that's what the review phase is for.</p>
+            </div>
+        </div>
+    </div>
+
+    <p>The planning phase takes a few minutes. During that time the agent is doing the work of a senior dev scoping a ticket — reading the codebase, understanding patterns, deciding on an approach, writing it all up. It does this every single time and never cuts corners. Your research docs are what make this phase really sing — the agent isn't guessing at the domain, it's reading your documented decisions.</p>
+
+    <div class="callout">
+        <div class="callout-label">Why not just skip to building?</div>
+        <p>You could skip planning and let Claude start coding immediately. But the planning phase is what turns a good brief into a great implementation. It's the difference between a PR that needs one round of fixes and one that needs three. The few minutes it takes pays for itself every time.</p>
+    </div>
+
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- Section 5: The Build -->
+<section id="build">
+    <div class="section-number">05 — The Build</div>
+    <h2>Walk away. Don't interrupt.</h2>
+
+    <p>This is the discipline part. Once Claude starts building, <strong>leave it alone.</strong> Don't watch the diffs scroll by. Don't jump in to correct something mid-flow. Don't say "actually, do it this way instead." Go make a coffee. Work on something else. Come back when it's done.</p>
+
+    <p>Interrupting an agent mid-build is almost always worse than letting it finish and fixing things afterward. When you interrupt, you break its context, force it to re-orient, and often end up with a messier result than if you'd just let it run. The agent has a plan — let it execute.</p>
+
+    <div class="callout">
+        <div class="callout-label">Why non-interference works</div>
+        <p>Claude's planning phase built a detailed implementation plan. It knows what files to touch, in what order, how they connect. When you interrupt mid-way, you're inserting yourself into the middle of that plan. The agent has to reconcile your change with everything it was about to do. It's like grabbing the steering wheel from someone who's already navigating — you might think you're helping, but you're usually just making it swerve.</p>
+    </div>
+
+    <p>The one exception: if you spot something fundamentally wrong — like it's building against the wrong API or implementing a completely different feature — then yes, stop it. But "I'd have named that variable differently" or "I'd have used a different component" — save those for the review. That's what the review phase is for.</p>
+
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- Section 6: Review & Remediation -->
+<section id="review">
+    <div class="section-number">06 — Review &amp; Remediation</div>
+    <h2>Check the output, not the process.</h2>
+
+    <p>The build is done. Now you review. The key mindset shift here is that you're reviewing the <strong>output</strong> — does it work, does it look right, does it match the brief — not the process. You don't need to read every line of the diff. You need to check that the feature works.</p>
+
+    <div class="step-list">
+        <div class="step-item">
+            <div class="step-content">
+                <strong>Automated checks first</strong>
+                <p>Run the build. Run the tests. Run a code review skill if you have one. Let the tools tell you where to look before you start reading code yourself. If the build passes and tests pass, you're already in good shape.</p>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-content">
+                <strong>Check the UI against the designs</strong>
+                <p>Pull up the Figma designs. Click through the feature. Does it match? This is where you'll catch most of the issues — spacing, colours, animation timing, responsive behaviour. The functional stuff is usually solid; the visual polish is where humans still add the most value.</p>
+            </div>
+        </div>
+        <div class="step-item">
+            <div class="step-content">
+                <strong>Remediate with bullet lists</strong>
+                <p>Don't rewrite the brief. Don't start over. Write a specific, actionable list of fixes: "the card flip animation should be 300ms not 200ms," "the progress bar is missing on mobile," "the end scene needs a retry button." Specific, testable, one per line.</p>
+            </div>
+        </div>
+    </div>
+
+    <p>One or two rounds of fixes and you're shipping. After a few features you get a feel for what to check and the remediation lists basically write themselves.</p>
+
+    <div class="callout">
+        <div class="callout-label">Bullet lists, not re-prompts</div>
+        <p>Remediation is not re-prompting. You're not explaining the feature again. You're giving Claude a checklist of specific fixes in the same session, with all its context intact. It reads your list, fixes each item, and you review again. This is far more efficient than starting fresh or rewriting the brief.</p>
+    </div>
+
+    <p><strong>How to write good remediation lists.</strong> Each item should be specific and testable — something Claude can act on without asking clarifying questions. "Fix the spacing" is vague. "The gap between the card and the progress bar should be 16px, not 24px" is actionable. Reference the specific component or screen. If there's a design to match, say which Figma frame. If there's a behaviour issue, describe what it does vs what it should do.</p>
+
+    <p>Keep each item independent. Don't chain them with "and then" or "after that" — just list them. Claude works through the list one by one and the order rarely matters. If something does depend on something else, say so explicitly: "Once the card flip is fixed, the progress bar animation should trigger on flip completion."</p>
+
+    <p>Don't re-explain context Claude already has. It's the same session — it built the feature, it knows the codebase, it has your brief and research docs loaded. Just tell it what's wrong and what "right" looks like. Think of it like leaving comments on a PR, not writing a new ticket.</p>
+
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- Section 7: Automate It -->
+<section id="automate">
+    <div class="section-number">07 — Automate It</div>
+    <h2>Once you're working this way, automate the whole thing.</h2>
+
+    <p>Here's the payoff. Once you're naturally working in this flow — research, brief, plan, build, review, fix — you can automate it. The brief becomes a ticket. The planning phase runs headlessly. The build happens while you sleep. You wake up to a PR.</p>
+
+    <p><strong><a href="https://github.com/Sugar-Coffee/stokowski" style="color: var(--accent); text-decoration: none;">Stokowski</a></strong> is an open-source orchestrator that does exactly this. It polls your ticket system (Linear) for issues in "Todo," spins up isolated Claude Code agents, and runs each ticket through a configurable state machine — with human gates wherever you want them.</p>
+
+    <div class="flow">
+        <span class="flow-step">Ticket in Todo</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Agent investigates</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Gate (optional)</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Agent builds</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">PR for review</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step">Merge</span>
+    </div>
+
+    <p>The whole pipeline is defined in YAML. Each stage is either an <strong>agent stage</strong> (Claude does the work) or a <strong>gate</strong> (you review and approve or request rework). Start with gates on everything while you build trust, then progressively remove them as you see the output quality is consistent.</p>
+
+    <div class="code-block">
+        <div class="code-header">
+            <span>A pipeline with human checkpoints</span>
+            <span class="code-tag">workflow.yaml</span>
+        </div>
+        <pre><span class="highlight">states:</span>
+  <span class="green">investigate:</span>        <span class="comment"># agent researches the ticket</span>
+    <span class="accent">type:</span> agent
+  <span class="blue">research-review:</span>    <span class="comment"># you check the investigation</span>
+    <span class="accent">type:</span> gate
+    <span class="accent">rework_to:</span> investigate
+  <span class="green">implement:</span>          <span class="comment"># agent builds the feature</span>
+    <span class="accent">type:</span> agent
+  <span class="blue">code-review:</span>        <span class="comment"># you review the PR</span>
+    <span class="accent">type:</span> gate
+    <span class="accent">rework_to:</span> implement
+  <span class="green">merge:</span>              <span class="comment"># agent merges on approval</span>
+    <span class="accent">type:</span> agent</pre>
+    </div>
+
+    <p>When a gate rejects work, the agent gets your feedback and re-enters the <code>rework_to</code> stage — same session, all context preserved. It's the automated version of your bullet-list remediation.</p>
+
+    <p>Once you trust the pipeline, trim the gates. Bug fixes, test additions, small features with clear specs — these can run fully gateless. Ticket in, PR out, you just review and merge.</p>
+
+    <div class="code-block">
+        <div class="code-header">
+            <span>A gateless pipeline</span>
+            <span class="code-tag">workflow.yaml</span>
+        </div>
+        <pre><span class="highlight">states:</span>
+  <span class="green">implement:</span>
+    <span class="accent">type:</span> agent
+    <span class="accent">prompt:</span> prompts/implement.md
+    <span class="accent">transitions:</span>
+      <span class="accent">complete:</span> done
+  <span class="purple">done:</span>
+    <span class="accent">type:</span> terminal</pre>
+    </div>
+
+    <p>It gets really interesting when you connect this to monitoring. Sentry catches an error — creates a ticket. Stokowski picks it up, the agent investigates and fixes, PR appears. You just review and merge. Multiple agents can run concurrently too — one building a feature, one fixing a bug, one adding tests.</p>
+
+    <div class="callout">
+        <div class="callout-label">Everything you've learned still applies</div>
+        <p>The research docs you wrote? Stokowski's agents read them. Your CLAUDE.md? Every headless agent loads it. The brief format? That's your ticket now. The remediation flow? That's the rework loop. Nothing changes except who triggers each step — you or the orchestrator. The habits you build working interactively are exactly what make automation work.</p>
+    </div>
+
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- Tips -->
+<section id="tips">
+    <div class="section-number">Claude Code Tips</div>
+    <h2>Stuff that makes life easier.</h2>
+
+    <p>Shortcuts, features, and configuration tricks we use all the time.</p>
+
+    <div class="tip">
+        <div class="tip-label">&#9889; opusplan</div>
+        <p>Use <code>claude --model opusplan</code> to get the best of both models. Opus handles the planning and architectural reasoning, then Sonnet takes over for the actual code generation. You get Opus-quality decisions at Sonnet speed — and it costs roughly 40% less than running full Opus.</p>
+    </div>
+
+    <div class="tip">
+        <div class="tip-label">&#9889; .claudeignore</div>
+        <p>Use a <code>.claudeignore</code> file (same syntax as .gitignore) to exclude files and directories Claude doesn't need — build output, vendor folders, generated code. On a typical Node project this can cut 25% of the tokens Claude spends reading your repo, leaving more room for the actual feature work.</p>
+    </div>
+
+    <div class="tip">
+        <div class="tip-label">&#9889; Ctrl+G — editor mode</div>
+        <p>Use <code>Ctrl+G</code> to open your system text editor (respects <code>$EDITOR</code>) for composing prompts. For the kind of multi-paragraph briefs that enable one-shotting, a proper editor is far better than the single-line terminal input. Write your brief in VS Code or Vim, save and close, and it sends.</p>
+    </div>
+
+    <div class="tip">
+        <div class="tip-label">&#9889; Hooks</div>
+        <p>Configure <code>PostToolUse</code> hooks in your <code>.claude/settings.json</code> to auto-run Prettier or your formatter every time Claude edits a file. Code is always formatted to your standards — one less thing to catch in review. <code>PreToolUse</code> hooks can block certain actions before they happen.</p>
+    </div>
+
+    <div class="tip">
+        <div class="tip-label">&#9889; /btw</div>
+        <p>Use <code>/btw</code> to give Claude context without disrupting its current task. "btw, the API endpoint changed to /v2/flashcards" — Claude absorbs the info and keeps going. It's the difference between a tap on the shoulder and pulling someone out of deep focus.</p>
+    </div>
+
+    <div class="tip">
+        <div class="tip-label">&#9889; Subagents + Ctrl+B</div>
+        <p>Claude can spawn focused <strong>subagents</strong> for parallel work — each with its own context window. If a feature touches multiple packages, separate agents handle each one concurrently and merge the results. <code>Ctrl+B</code> pushes a subagent to the background while you continue in the main session.</p>
+    </div>
+
+    <div class="tip">
+        <div class="tip-label">&#9889; Esc Esc — undo</div>
+        <p>If something went wrong, <code>Esc Esc</code> (double-tap Escape) restores your code and conversation to a previous point — cleaner than Ctrl+C because it actually reverts the changes rather than just stopping.</p>
+    </div>
+
+    <div class="tip">
+        <div class="tip-label">&#9889; Option+T — extended thinking</div>
+        <p>Use <code>Option+T</code> (<code>Alt+T</code> on Linux/Windows) to toggle extended thinking mid-session. When Claude is struggling with a subtle bug, switching on extended thinking gives it deeper reasoning without restarting the conversation. Toggle it off again for straightforward fixes.</p>
+    </div>
+
+    <div class="tip">
+        <div class="tip-label">&#9889; Permission modes</div>
+        <p>For fully autonomous runs, use <code>--dangerously-skip-permissions</code> to bypass all permission prompts, or <code>--allowedTools</code> to restrict which tools are available — keeping things safe even without a human in the loop.</p>
+    </div>
+
+    <p style="margin-top: 2rem; text-align: center;"><a href="https://github.com/Sugar-Coffee/stokowski" style="color: var(--accent); text-decoration: none; font-weight: 600; font-size: 1.05rem;">github.com/Sugar-Coffee/stokowski &rarr;</a></p>
+</section>
+
+<footer>
+    Built with Claude Code, naturally.
+</footer>
+
+<script>
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('nav .nav-links a');
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                navLinks.forEach(link => link.classList.remove('active'));
+                const active = document.querySelector(`nav a[href="#${entry.target.id}"]`);
+                if (active) active.classList.add('active');
+            }
+        });
+    }, { threshold: 0.3, rootMargin: '-80px 0px -50% 0px' });
+
+    sections.forEach(section => observer.observe(section));
+</script>
+
+</body>
+</html>
